@@ -15,11 +15,10 @@ $anno_and_dep_repo = "../lib";
 
 $dependencies = ['InteCoreAnnotation:1.0'];
 
-$annotation_processors = ['InteCheckNamespaceAndPublishName:1.0'];
-
 $publish = [
   'repo'=> "../lib",
-  'name'=> "InteAnnotationHelper",
-  'version'=>"1.0"
+  'name'=> "InteCheckNamespaceAndPublishName",
+  'version'=>"1.0",
+  'annotation_services' => [\Inte\CheckNamespaceAndPublishName\Check::class]
 ];
 

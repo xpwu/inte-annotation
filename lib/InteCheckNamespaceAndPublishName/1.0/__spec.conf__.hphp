@@ -1,0 +1,8 @@
+<?php
+
+$name = "InteCheckNamespaceAndPublishName";
+$version = "1.0";
+
+$dependencies = ["InteCoreAnnotation:1.0"];
+
+$annotationServer = ["Inte\CheckNamespaceAndPublishName\Check"];
