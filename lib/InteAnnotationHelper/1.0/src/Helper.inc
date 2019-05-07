@@ -24,13 +24,13 @@ class Helper {
     return $this->strategy_->isAnnotatingClass($class);
   }
 
-  public function getAnnotationUsedByMethod(
+  public function getAnnotationAssociatedWithMethod(
     \ReflectionMethod $method):?Annotation {
 
     return $this->strategy_->getAnnotationUsedByMethod($method);
   }
 
-  public function getAnnotationUsedByProperty(
+  public function getAnnotationAssociatedWithProperty(
     \ReflectionProperty $property):?Annotation {
 
     return $this->strategy_->getAnnotationUsedByProperty($property);

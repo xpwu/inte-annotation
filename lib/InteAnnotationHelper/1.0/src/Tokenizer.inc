@@ -20,18 +20,20 @@ class Tokenizer {
     return count(array_intersect($alias, $implements));
   }
 
-  public function getAliasNames(ReflectionClass $interface):array {
+  public function getAliasNames(ReflectionClass $interfaceOrClass):array {
     $alias = [];
     // 1  interface 的命名空间是class的子命名空间, 或者同命名空间
-    $pos = strpos($interface->getName(), $this->class_->getNamespaceName());
+    $pos = strpos($interfaceOrClass->getName()
+      , $this->class_->getNamespaceName());
     if ($pos !== false) {
-      $alias[] = substr($interface->getName(), $pos+1/* 去掉\ */);
+      $alias[] = substr($interfaceOrClass->getName()
+        , strlen($this->class_->getNamespaceName()) + $pos+1/* 去掉\ */);
     }
 
     // 2 使用 use ... [as] ...  引入的
 
     $process = -1;
-    $name = ["", $interface->getShortName()]; // use=>as
+    $name = ["", $interfaceOrClass->getShortName()]; // use=>as
     foreach ($this->tokens_ as $token) {
       if (is_array($token) && $token[0] === T_USE) {
         $process = 0;
@@ -43,11 +45,13 @@ class Tokenizer {
       }
 
       if ($token === ";" && $process != -1) {
-        $process = -1;
-        if ($name[0] === $interface->getName()) {
+        if ($name[0] === $interfaceOrClass->getName()) {
           $alias[] = $name[1];
-          break;
         }
+
+        $process = -1;
+        $name = ["", $interfaceOrClass->getShortName()];
+        continue;
       }
 
       if ($process == 0 && $token[0] !== T_WHITESPACE) {
@@ -61,7 +65,7 @@ class Tokenizer {
     }
 
     // 3 全限定名
-    $alias[] = "\\" . $interface->getName();
+    $alias[] = "\\" . $interfaceOrClass->getName();
 
     return $alias;
   }
@@ -71,9 +75,17 @@ class Tokenizer {
 
     $thisClass = 0;
     foreach ($this->tokens_ as $token) {
-      if (is_array($token) && $token[0] === T_CLASS
-        && $token[1] === $this->class_->getShortName()) {
+      if ($thisClass ==0 && is_array($token) && $token[0] === T_CLASS) {
         $thisClass = 1;
+        continue;
+      }
+
+      if ($thisClass == 1 && is_array($token) && $token[0] === T_STRING) {
+        if ($token[1] === $this->class_->getShortName()) {
+          $thisClass = 2;
+        } else {
+          $thisClass = 0;
+        }
         continue;
       }
 
@@ -81,12 +93,12 @@ class Tokenizer {
         break;
       }
 
-      if ($thisClass == 1 && is_array($token) && $token[0] === T_IMPLEMENTS) {
-        $thisClass = 2;
+      if ($thisClass == 2 && is_array($token) && $token[0] === T_IMPLEMENTS) {
+        $thisClass = 3;
         continue;
       }
 
-      if ($thisClass == 2 && is_array($token) && $token[0] === T_STRING) {
+      if ($thisClass == 3 && is_array($token) && $token[0] === T_STRING) {
         $implements[] = $token[1];
       }
     }
