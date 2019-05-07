@@ -1,0 +1,8 @@
+<?php
+
+$name = "InteMetaAnnotation";
+$version = "1.0";
+
+$dependencies = [];
+
+
