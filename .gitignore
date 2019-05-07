@@ -2,3 +2,4 @@
 .idea
 lib/InteCoreAnnotation
 */build
+AnnotationHelper/test/.phpunit.result.cache

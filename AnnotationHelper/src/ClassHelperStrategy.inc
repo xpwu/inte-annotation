@@ -42,7 +42,7 @@ class ClassHelperStrategy implements HelperStrategy {
    * @param \ReflectionMethod|\ReflectionProperty $methodOrProperty
    * @return Annotation|null
    */
-  public function getAnnotationUsedByMethodOrProperty(
+  private function getAnnotationUsedByMethodOrProperty(
     $methodOrProperty):?Annotation {
 
     if ($this->annotation_->isAbstract()) {
@@ -59,10 +59,12 @@ class ClassHelperStrategy implements HelperStrategy {
     $matches = [];
     $matched = 0;
     foreach ($allAlias as $alias) {
+      $alias = str_replace('\\', '\\\\', $alias);
+
       //  * uses annotation (a=c,x="y")
       $matched = preg_match(
         '/^\s*\*\s*@uses\s+'.$alias
-        .'(\s+\(([\w=,"\']*)\))?\s*$/U', $doc, $matches);
+        .'(\s+\((.*)\))?\s*$/mU', $doc, $matches);
 
       if ($matched !== 0) {
         break;
@@ -103,7 +105,8 @@ class ClassHelperStrategy implements HelperStrategy {
       if ($value === null) {
         $this->logger_->throwError(
           "annotation(@".$this->annotation_->getName()."), at "
-          . $annotatedItem->getName()
+          . $annotatedItem->getDeclaringClass()->getName()
+          . "::" . $annotatedItem->getName()
           . "(file: ". $annotatedItem->getDeclaringClass()->getFileName()
           ." ; line:". $annotatedItem->getStartLine()
           ."), arg($key) NOT set");
