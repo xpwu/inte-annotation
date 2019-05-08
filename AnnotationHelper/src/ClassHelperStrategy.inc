@@ -31,6 +31,11 @@ class ClassHelperStrategy implements HelperStrategy {
     return false;
   }
 
+  public function isAnnotatingInterface(\ReflectionClass $class):bool {
+    // 类的注解器通过继承，通过继承方式，不可能注解到一个接口上
+    return false;
+  }
+
 
   public function getAnnotationUsedByMethod(
     \ReflectionMethod $method):?Annotation {

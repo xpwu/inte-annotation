@@ -17,11 +17,24 @@ class InterfaceHelperStrategy implements HelperStrategy {
       return false;
     }
 
-    if ($this->annotation_->implementsInterface(Inherited::class)) {
+    if ($this->annotation_->isSubclassOf(Inherited::class)) {
       return true;
     }
 
     $tokenizer = new Tokenizer($class);
+    return $tokenizer->directlyImplementInterface($this->annotation_);
+  }
+
+  public function isAnnotatingInterface(\ReflectionClass $class):bool {
+    if (!$class->isSubclassOf($this->annotation_->getName())) {
+      return false;
+    }
+
+    if ($this->annotation_->isSubclassOf(Inherited::class)) {
+      return true;
+    }
+
+    $tokenizer = new InterfaceTokenizer($class);
     return $tokenizer->directlyImplementInterface($this->annotation_);
   }
 

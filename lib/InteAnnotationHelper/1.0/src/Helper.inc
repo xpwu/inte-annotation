@@ -21,6 +21,10 @@ class Helper {
   }
 
   public function isAnnotatingClass(\ReflectionClass $class):bool {
+    if ($class->isInterface()) {
+      return $this->strategy_->isAnnotatingInterface($class);
+    }
+
     return $this->strategy_->isAnnotatingClass($class);
   }
 

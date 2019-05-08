@@ -22,12 +22,15 @@ class Tokenizer {
 
   public function getAliasNames(ReflectionClass $interfaceOrClass):array {
     $alias = [];
+
     // 1  interface 的命名空间是class的子命名空间, 或者同命名空间
-    $pos = strpos($interfaceOrClass->getName()
-      , $this->class_->getNamespaceName());
-    if ($pos !== false) {
-      $alias[] = substr($interfaceOrClass->getName()
-        , strlen($this->class_->getNamespaceName()) + $pos+1/* 去掉\ */);
+    if ($this->class_->getNamespaceName() !== null) {
+      $pos = strpos($interfaceOrClass->getName()
+        , $this->class_->getNamespaceName());
+      if ($pos !== false) {
+        $alias[] = substr($interfaceOrClass->getName()
+          , strlen($this->class_->getNamespaceName()) + $pos+1/* 去掉\ */);
+      }
     }
 
     // 2 使用 use ... [as] ...  引入的
@@ -70,12 +73,22 @@ class Tokenizer {
     return $alias;
   }
 
+  protected function getInterfaceImplementsKeywordToken():int {
+    return T_IMPLEMENTS;
+  }
+
+  protected function getDefineKeywordToken():int {
+    return T_CLASS;
+  }
+
   private function getAllImplements():array {
     $implements = [];
 
     $thisClass = 0;
+    $nowImpl = "";
     foreach ($this->tokens_ as $token) {
-      if ($thisClass ==0 && is_array($token) && $token[0] === T_CLASS) {
+      if ($thisClass ==0 && is_array($token)
+        && $token[0] === $this->getDefineKeywordToken()) {
         $thisClass = 1;
         continue;
       }
@@ -90,16 +103,28 @@ class Tokenizer {
       }
 
       if ($thisClass != 0 && $token === "{") {
+        if ($thisClass === 3) {
+          $implements[] = $nowImpl;
+          $nowImpl = "";
+        }
         break;
       }
 
-      if ($thisClass == 2 && is_array($token) && $token[0] === T_IMPLEMENTS) {
+      if ($thisClass == 2 && is_array($token) && $token[0]
+          === $this->getInterfaceImplementsKeywordToken()) {
+
         $thisClass = 3;
         continue;
       }
 
-      if ($thisClass == 3 && is_array($token) && $token[0] === T_STRING) {
-        $implements[] = $token[1];
+      if ($thisClass == 3 && $token === ',' && $nowImpl !== "") {
+        $implements[] = $nowImpl;
+        $nowImpl = "";
+      }
+
+      if ($thisClass == 3 && is_array($token)
+        && ($token[0] === T_STRING || $token[0] === T_NS_SEPARATOR)) {
+        $nowImpl = $nowImpl . $token[1];
       }
     }
 

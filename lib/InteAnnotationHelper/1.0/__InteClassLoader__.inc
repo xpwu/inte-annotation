@@ -14,5 +14,6 @@ class ClassLoader {
 		"Inte\Annotation\Helper\InterfaceHelperStrategy" => "src/InterfaceHelperStrategy.inc",
 		"Inte\Annotation\Helper\Tokenizer" => "src/Tokenizer.inc",
 		"Inte\Annotation\Helper\ClassHelperStrategy" => "src/ClassHelperStrategy.inc",
+		"Inte\Annotation\Helper\InterfaceTokenizer" => "src/InterfaceTokenizer.inc",
   ];
 }
