@@ -3,6 +3,6 @@
 $name = "InteAnnotationHelper";
 $version = "1.0";
 
-$dependencies = ["InteCoreAnnotation:1.0"];
+$dependencies = ["InteCoreAnnotation:1.0","InteMetaAnnotation:1.0"];
 
 

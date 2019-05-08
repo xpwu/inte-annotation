@@ -13,7 +13,7 @@ $src = ['src/**/*.inc'];
 
 $anno_and_dep_repo = "../lib";
 
-$dependencies = ['InteCoreAnnotation:1.0'];
+$dependencies = ['InteCoreAnnotation:1.0', 'InteMetaAnnotation:1.0'];
 
 $annotation_processors = ['InteCheckNamespaceAndPublishName:1.0'];
 
