@@ -81,7 +81,9 @@ class ClassHelperStrategy implements HelperStrategy {
     }
 
     $annotation = $this->annotation_->newInstance();
-    if (count($matches) === 3 && $matches[2] !== null) {
+    if (count($matches) === 3 && $matches[2] !== null
+      && trim($matches[2]) !== "") {
+
       $args = explode(',', $matches[2]);
       foreach ($args as $arg) {
         // 对于不写key的参数值，赋值给value变量
@@ -132,7 +134,7 @@ class ClassHelperStrategy implements HelperStrategy {
       return $ret;
     }
 
-    return null;
+    return $str;
   }
 
   /**
@@ -166,7 +168,7 @@ class ClassHelperStrategy implements HelperStrategy {
           . "::" . $annotatedItem->getName()
           . "(file: ...". substr(
             $annotatedItem->getDeclaringClass()->getFileName(), -25)
-          ."), property('$key') NOT set or type is INVALID");
+          ."), property('$key') NOT set or value type is INVALID");
       }
     }
   }
