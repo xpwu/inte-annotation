@@ -24,7 +24,9 @@ class Tokenizer {
     $alias = [];
 
     // 1  interface 的命名空间是class的子命名空间, 或者同命名空间
-    if ($this->class_->getNamespaceName() !== null) {
+    if ($this->class_->getNamespaceName() !== null
+      && $this->class_->getNamespaceName() !== "") {
+
       $pos = strpos($interfaceOrClass->getName()
         , $this->class_->getNamespaceName());
       if ($pos !== false) {
