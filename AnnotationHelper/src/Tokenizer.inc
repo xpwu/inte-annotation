@@ -45,8 +45,9 @@ class Tokenizer {
         continue;
       }
 
-      if (is_array($token) && $token[0] === T_AS) {
+      if ($process == 0 && is_array($token) && $token[0] === T_AS) {
         $process = 1;
+        continue;
       }
 
       if ($token === ";" && $process != -1) {
