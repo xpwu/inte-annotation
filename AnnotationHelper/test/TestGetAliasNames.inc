@@ -38,4 +38,39 @@ class TestGetAliasNames implements ElseC{
    * @var ElseClass\0TestGetAliasNamesElseClass
    */
   public $e;
+
+  /**
+   * @var integer
+   */
+  public $f;
+
+  /**
+   * @var int|null
+   */
+  public $g;
+
+  /**
+   * @var int[]|double
+   */
+  public $h;
+
+  /**
+   * @var ElseClass\TestGetAliasNamesElseClass[]
+   */
+  public $i;
+
+  /**
+   * @var ElseClass\TestGetAliasNamesElseClass[]|boolean
+   */
+  public $j;
+
+  /**
+   * @var ElseClass\TestGetAliasNamesElseClass[]|boolean[]
+   */
+  public $k;
+
+  /**
+   * @var ElseClass\TestGetAliasNamesElseClass[]|boolean[
+   */
+  public $l;
 }

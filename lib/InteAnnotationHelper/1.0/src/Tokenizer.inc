@@ -137,7 +137,9 @@ class Tokenizer {
 
   /**
    *
-   * return: string|bool|int|float|其他类型|前面类型的数组  一个变量可以有多个类型 | 分隔
+   * 类型 string|bool|int|float|array|object|null|callback|mixed|resource|void
+   *  |<类>|[]标示的数组
+   *
    *  '@var' 后面定义的类型，就是返回值，没有此注释就返回null，| 可以分隔多个类型
    *
    * @throws \ReflectionException
@@ -148,51 +150,61 @@ class Tokenizer {
     $doc = $refProperty->getDocComment();
     $matched = preg_match(
       '/^\s*\*\s*@var\s+?'
-      .'((\\\\??[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*?)+?)'
+      .'(((\\\\??[a-zA-Z_][a-zA-Z0-9_]*?)+?(\[\])?\|?)+)'
       .'\s+?/mU'
       , $doc, $matches);
 
     $ret = [];
 
     if ($matched === false || $matched === 0
-      || count($matches) !== 3 || $matches[1] === null) {
+      || count($matches) < 2 || $matches[1] === null) {
       return $ret;
     }
 
     $primitive = [
-      'string'=>1,
-      'bool'=>1,
-      'int'=>1,
-      'float'=>1,
-      'array'=>1,
-      'object'=>1,
-      'null'=>1,
-      'callback'=>1,
-      'mixed'=>1,
-      'resource'=>1,
+      'string'=>'string',
+      'bool'=>'bool',
+      'int'=>'int',
+      'float'=>'float',
+      'array'=>'array',
+      'object'=>'object',
+      'null'=>'null',
+      'callback'=>'callback',
+      'mixed'=>'mixed',
+      'resource'=>'resource',
+      'integer'=>'int',
+      'boolean'=>'bool',
+      'double'=>'float',
+      'void'=>'void'
       ];
 
     $types = explode('|', $matches[1]);
 
     foreach ($types as $type) {
+      $suffix = "";
+      if (strlen($type) > 2 && $type[-2]=='['&&$type[-1]==']') {
+        $suffix = '[]';
+        $type = substr($type, 0, -2);
+      }
+
       if (@$primitive[$type] !== null) {
-        $ret[] = $type;
+        $ret[] = $primitive[$type] . $suffix;
         continue;
       }
 
       if (strpos($type, '\\') === 0) {
-        $ret[] = substr($type, 1);
+        $ret[] = substr($type, 1) . $suffix;
         continue;
       }
 
       $uses = $this->getAllUseMap();
       $fullNm = @$uses[$type];
       if ($fullNm !== null) {
-        $ret[] = $fullNm;
+        $ret[] = $fullNm . $suffix;
         continue;
       }
 
-      $ret[] = $this->class_->getNamespaceName() . '\\' . $type;
+      $ret[] = $this->class_->getNamespaceName() . '\\' . $type . $suffix;
     }
 
     return $ret;
