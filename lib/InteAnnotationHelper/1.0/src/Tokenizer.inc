@@ -5,6 +5,7 @@ namespace Inte\Annotation\Helper;
 
 
 use ReflectionClass;
+use ReflectionProperty;
 
 class Tokenizer {
   function __construct(ReflectionClass $class) {
@@ -132,6 +133,112 @@ class Tokenizer {
     }
 
     return $implements;
+  }
+
+  /**
+   *
+   * return: string|bool|int|float|其他类型|前面类型的数组  一个变量可以有多个类型 | 分隔
+   *  '@var' 后面定义的类型，就是返回值，没有此注释就返回null，| 可以分隔多个类型
+   *
+   * @throws \ReflectionException
+   */
+  public function getPropertyTypeName(string $propertyName):array {
+
+    $refProperty = $this->class_->getProperty($propertyName);
+    $doc = $refProperty->getDocComment();
+    $matched = preg_match(
+      '/^\s*\*\s*@var\s+?'
+      .'((\\\\??[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*?)+?)'
+      .'\s+?/mU'
+      , $doc, $matches);
+
+    $ret = [];
+
+    if ($matched === false || $matched === 0
+      || count($matches) !== 3 || $matches[1] === null) {
+      return $ret;
+    }
+
+    $primitive = [
+      'string'=>1,
+      'bool'=>1,
+      'int'=>1,
+      'float'=>1,
+      'array'=>1,
+      'object'=>1,
+      'null'=>1,
+      'callback'=>1,
+      'mixed'=>1,
+      'resource'=>1,
+      ];
+
+    $types = explode('|', $matches[1]);
+
+    foreach ($types as $type) {
+      if (@$primitive[$type] !== null) {
+        $ret[] = $type;
+        continue;
+      }
+
+      if (strpos($type, '\\') === 0) {
+        $ret[] = substr($type, 1);
+        continue;
+      }
+
+      $uses = $this->getAllUseMap();
+      $fullNm = @$uses[$type];
+      if ($fullNm !== null) {
+        $ret[] = $fullNm;
+        continue;
+      }
+
+      $ret[] = $this->class_->getNamespaceName() . '\\' . $type;
+    }
+
+    return $ret;
+  }
+
+  /**
+   * @return [as=>fullName] array
+   */
+  private function getAllUseMap():array {
+    $process = -1;
+    $name = ["", ""]; // use=>as
+    $ret = [];
+
+    foreach ($this->tokens_ as $token) {
+      if (is_array($token) && $token[0] === T_USE) {
+        $process = 0;
+        continue;
+      }
+
+      if ($process == 0 && is_array($token) && $token[0] === T_AS) {
+        $process = 1;
+        continue;
+      }
+
+      if ($token === ";" && $process != -1) {
+        $ret[$name[1]] = $name[0];
+
+        $process = -1;
+        $name = ["", ""];
+        continue;
+      }
+
+      if ($process == 0 && $token[0] !== T_WHITESPACE) {
+        if ($token[0] === T_STRING) {
+          $name[1] = $token[1];
+        }
+        $name[0] .= $token[1];
+        continue;
+      }
+
+      if ($process == 1 && $token[0] !== T_WHITESPACE) {
+        $name[1] = $token[1];
+      }
+    }
+
+    return $ret;
   }
 
   private $class_;

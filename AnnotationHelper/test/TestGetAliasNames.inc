@@ -22,4 +22,20 @@ class TestGetAliasNames implements ElseC{
    *   @uses \AnnotationTestClass   ("ok", arg = ['a'; 9; false; TRUE; 9.4])
    */
   public $b;
+
+
+  /**
+   * @var \Inte\Test\ElseClass\TestGetAliasNamesElseClass
+   */
+  public $c;
+
+  /**
+   * @var ElseClass\TestGetAliasNamesElseClass
+   */
+  public $d;
+
+  /**
+   * @var ElseClass\0TestGetAliasNamesElseClass
+   */
+  public $e;
 }

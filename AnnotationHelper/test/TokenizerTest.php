@@ -28,4 +28,25 @@ class TokenizerTest extends TestCase {
       new \ReflectionClass(TestGetAliasNamesElseClass::class));
     self::assertEquals(true, $ret);
   }
+
+  /**
+   * @throws \ReflectionException
+   */
+  public function testGetPropertyTypeName() {
+    $tokenize = new Tokenizer(new \ReflectionClass(TestGetAliasNames::class));
+    $types = $tokenize->getPropertyTypeName("a");
+    self::assertEquals(TestGetAliasNamesElseClass::class, $types[0]);
+
+    $types = $tokenize->getPropertyTypeName("b");
+    self::assertEquals(TestGetAliasNamesElseClass::class, $types[0]);
+
+    $types = $tokenize->getPropertyTypeName("c");
+    self::assertEquals(TestGetAliasNamesElseClass::class, $types[0]);
+
+    $types = $tokenize->getPropertyTypeName("d");
+    self::assertEquals(TestGetAliasNamesElseClass::class, $types[0]);
+
+    $types = $tokenize->getPropertyTypeName("e");
+    self::assertEquals(0, count($types));
+  }
 }
