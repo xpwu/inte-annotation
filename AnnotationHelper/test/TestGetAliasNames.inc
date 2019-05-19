@@ -19,7 +19,7 @@ class TestGetAliasNames implements ElseC{
 
   /**
    * @var ElseC
-   *   @uses \AnnotationTestClass   ("ok", arg = ['a'; 9; false; TRUE; 9.4])
+   *   @uses \AnnotationTestClass   ('o\'k', arg = ['a'; 9; false; TRUE; 9.4])
    */
   public $b;
 
@@ -73,4 +73,22 @@ class TestGetAliasNames implements ElseC{
    * @var ElseClass\TestGetAliasNamesElseClass[]|boolean[
    */
   public $l;
+
+  /**
+   * @var ElseC
+   *   @uses \AnnotationTestClass   (value="ok-value", arg = ['a', 9, false, 5, 9.4])
+   */
+  public $m;
+
+  /**
+   * @var ElseC
+   *   @uses \AnnotationTestClass  ('ok')
+   */
+  public $n;
+
+  /**
+   * @var ElseC
+   *   @uses \AnnotationTestClass  ('o\'k\'')
+   */
+  public $o;
 }

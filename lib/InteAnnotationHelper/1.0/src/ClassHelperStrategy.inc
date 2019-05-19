@@ -86,33 +86,37 @@ class ClassHelperStrategy implements HelperStrategy {
 
       $subject = trim($matches[2]);
 
-      // 替换'[]'中的','为';'  方便下面做切分。同时去掉'[]'中的最后一个',' 。
-//      $argStrs = preg_replace('/\[[^,]+,[^,]*\]/')
-//      $matched = preg_match_all('/\[([^,]+)?((,)[^,]+)+(,)??(\])/', $subject
-//        , $indexMatches, PREG_SET_ORDER|PREG_OFFSET_CAPTURE);
-
       $argPatten =
-        '/(\s*([a-zA-Z_][a-zA-Z0-9_]*\s*=)+\s*?((\'.*\')|(".*")|(\[.*\])|(.+))\s*?,?)/';
+        '/'
+        . '(\s*'
+        . '([a-zA-Z_][a-zA-Z0-9_]*)'
+        . '\s*=)?\s*?'
+        . '((\'(([^\'])|(\\\\\'))*[^\\\\]\')'
+        . '|("(([^"])|(\\\\"))[^\\\\]*")'
+        . '|(\[[^\]]*\])'
+        . '|([^\'"\[,;=\s]+))'
+        . '\s*?,?'
+        . '/';
       $matched = preg_match_all($argPatten, $subject, $args, PREG_SET_ORDER);
       if ($matched === false || $matched === 0) {
         $this->logger_->throwError($this->log($methodOrProperty)
-          . ". \nArg is error, which must be $argPatten");
+          . ". \nArg is error, which must be '$argPatten', \nbut actual is '$subject'");
       }
 
-
-      $args = explode(',', $matches[2]);
+      $keys = [];
       foreach ($args as $arg) {
+        list($_0, $_1, $key, $value) = $arg;
         // 对于不写key的参数值，赋值给value变量
-        $arr = explode('=', $arg);
-        $arr[] = null; // 防止$arr的长度为1 引起list crash
-        list($key, $value) = $arr;
-        if ($value === null) {
-          $value = $key;
+        if ($key === "") {
           $key = "value";
         }
-        $value = trim($value);
-        $key = trim($key);
-        $annotation->{$key} = $this->unSerialize($value);
+        if (in_array($key, $keys)) {
+          $this->logger_->throwError($this->log($methodOrProperty)
+            . ". Duplicate arg-key('$key'), if you need values more than one, you can use []. " );
+        }
+        $keys[] = $key;
+
+        $annotation->{$key} = $this->unSerialize($value, $methodOrProperty);
       }
     }
 
@@ -122,14 +126,20 @@ class ClassHelperStrategy implements HelperStrategy {
     return $annotation;
   }
 
-  private function unSerialize(string $str) {
+  private function unSerialize(string $str, $methodOrProperty) {
     if ($str === 'false' || $str === 'FALSE') return false;
     if ($str === 'true' || $str === 'TRUE') return true;
     if ($str === "") return null;
     if ($str === "null") return null;
-    if (strlen($str) >= 2 && (($str[0] === '"' && $str[-1] === '"')
-      || ($str[0] === '\'' && $str[-1] === '\'')))
-      return substr($str, 1, -1);
+    if (strlen($str) >= 2 && $str[0] === '"' && $str[-1] === '"') {
+      return preg_replace('/\\\\\"/', '\"'
+        , substr($str, 1, -1));
+    }
+
+    if (strlen($str) >= 2 && $str[0] === '\'' && $str[-1] === '\'') {
+      return preg_replace('/\\\\\'/', '\''
+        , substr($str, 1, -1));
+    }
 
     /**
      * to number
@@ -139,14 +149,40 @@ class ClassHelperStrategy implements HelperStrategy {
 
     if (strlen($str) >= 2 && $str[0] === '[' && $str[-1] === ']') {
       $ret = [];
-      $arr = explode(';', substr($str, 1, -1));
-      foreach ($arr as $item) {
-        $r = $this->unSerialize(trim($item));
-        if ($r === null) {
-          return null;
-        }
-        $ret[] = $r;
+      $subject = substr($str, 1, -1);
+      if ($subject === "") {
+        return $ret;
       }
+
+      $arrPattern = '/'
+//        . '(\s*'
+//        . '([a-zA-Z_][a-zA-Z0-9_]*)'
+//        . '\s*=>)?\s*?'
+        . '((\'(([^\'])|(\\\\\'))*[^\\\\]\')'
+        . '|("(([^"])|(\\\\"))[^\\\\]*")'
+//        . '|(\[[^\]]*\])'
+        . '|([^\'",;=\s]+))'
+        . '\s*?(,|;)?'
+        . '/';
+      $matched = preg_match_all($arrPattern, $subject
+        , $args, PREG_SET_ORDER);
+      if ($matched === false || $matched === 0) {
+        $this->logger_->throwError($this->log($methodOrProperty)
+          . ". \nArray arg is error, which must be '$arrPattern', "
+          . "\nbut actual is '$subject'");
+      }
+
+      foreach ($args as $arg) {
+        list($_0, $value) = $arg;
+        $ret[] = $this->unSerialize($value, $methodOrProperty);
+//        if ($key !== "") {
+//          $ret[$key] = $this->unSerialize($value, $methodOrProperty);
+//        }else {
+//          $ret[] = $this->unSerialize($value, $methodOrProperty);
+//        }
+
+      }
+
       return $ret;
     }
 
@@ -185,10 +221,11 @@ class ClassHelperStrategy implements HelperStrategy {
           . ". NOT exist args(public property of annotation) '$key'");
       }
 
-      if ($value === null) {
-        $this->logger_->throwError($this->log($annotatedItem)
-          . ". NOT set or value type is INVALID");
-      }
+      // 这里不检查null 的情况，是否可以为null应该是具体的注解决定，这里不做检查
+//      if ($value === null) {
+//        $this->logger_->throwError($this->log($annotatedItem)
+//          . ". NOT set or value type is INVALID");
+//      }
     }
   }
 

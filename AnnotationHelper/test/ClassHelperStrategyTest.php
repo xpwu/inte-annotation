@@ -26,7 +26,33 @@ class ClassHelperStrategyTest extends TestCase {
     $ret = $helper->getAnnotationUsedByProperty($testClass->getProperty("b"));
 
     self::assertNotEquals(null, $ret);
-    self::assertEquals('ok', $ret->value);
+    self::assertEquals('o\'k', $ret->value);
     self::assertEquals(true, $ret->arg[3]);
+
+    /**
+     * @var AnnotationTestClass $ret
+     */
+    $ret = $helper->getAnnotationUsedByProperty($testClass->getProperty("n"));
+
+    self::assertNotEquals(null, $ret);
+    self::assertEquals('ok', $ret->value);
+
+    /**
+     * @var AnnotationTestClass $ret
+     */
+    $ret = $helper->getAnnotationUsedByProperty($testClass->getProperty("o"));
+
+    self::assertNotEquals(null, $ret);
+    self::assertEquals('o\'k\'', $ret->value);
+
+    /**
+     * @var AnnotationTestClass $ret
+     */
+    $ret = $helper->getAnnotationUsedByProperty($testClass->getProperty("m"));
+
+    self::assertNotEquals(null, $ret);
+    self::assertEquals('ok-value', $ret->value);
+    self::assertEquals(5, $ret->arg[3]);
+    self::assertEquals('a', $ret->arg[0]);
   }
 }
