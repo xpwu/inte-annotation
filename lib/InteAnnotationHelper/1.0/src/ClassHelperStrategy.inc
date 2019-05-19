@@ -84,6 +84,22 @@ class ClassHelperStrategy implements HelperStrategy {
     if (count($matches) === 3 && $matches[2] !== null
       && trim($matches[2]) !== "") {
 
+      $subject = trim($matches[2]);
+
+      // 替换'[]'中的','为';'  方便下面做切分。同时去掉'[]'中的最后一个',' 。
+//      $argStrs = preg_replace('/\[[^,]+,[^,]*\]/')
+//      $matched = preg_match_all('/\[([^,]+)?((,)[^,]+)+(,)??(\])/', $subject
+//        , $indexMatches, PREG_SET_ORDER|PREG_OFFSET_CAPTURE);
+
+      $argPatten =
+        '/(\s*([a-zA-Z_][a-zA-Z0-9_]*\s*=)+\s*?((\'.*\')|(".*")|(\[.*\])|(.+))\s*?,?)/';
+      $matched = preg_match_all($argPatten, $subject, $args, PREG_SET_ORDER);
+      if ($matched === false || $matched === 0) {
+        $this->logger_->throwError($this->log($methodOrProperty)
+          . ". \nArg is error, which must be $argPatten");
+      }
+
+
       $args = explode(',', $matches[2]);
       foreach ($args as $arg) {
         // 对于不写key的参数值，赋值给value变量
@@ -138,6 +154,19 @@ class ClassHelperStrategy implements HelperStrategy {
   }
 
   /**
+   *
+   * @param \ReflectionProperty|\ReflectionMethod $annotatedItem
+   */
+  private function log($annotatedItem):string {
+    return "annotation(@".$this->annotation_->getName()."), at "
+    . $annotatedItem->getDeclaringClass()->getName()
+    . "::" . $annotatedItem->getName()
+    . "(file: ...". substr(
+      $annotatedItem->getDeclaringClass()->getFileName(), -25)
+    .")";
+  }
+
+  /**
    * @param Annotation $annotation
    * @param \ReflectionProperty|\ReflectionMethod $annotatedItem
    */
@@ -152,23 +181,13 @@ class ClassHelperStrategy implements HelperStrategy {
 
     foreach ($annotation as $key=>$value) {
       if (!array_key_exists($key, $proNames)) {
-        $this->logger_->throwError(
-          "annotation(@".$this->annotation_->getName()."), at "
-          . $annotatedItem->getDeclaringClass()->getName()
-          . "::" . $annotatedItem->getName()
-          . "(file: ...". substr(
-            $annotatedItem->getDeclaringClass()->getFileName(), -25)
-          ."), NOT exist public property '$key'");
+        $this->logger_->throwError($this->log($annotatedItem)
+          . ". NOT exist args(public property of annotation) '$key'");
       }
 
       if ($value === null) {
-        $this->logger_->throwError(
-          "annotation(@".$this->annotation_->getName()."), at "
-          . $annotatedItem->getDeclaringClass()->getName()
-          . "::" . $annotatedItem->getName()
-          . "(file: ...". substr(
-            $annotatedItem->getDeclaringClass()->getFileName(), -25)
-          ."), property('$key') NOT set or value type is INVALID");
+        $this->logger_->throwError($this->log($annotatedItem)
+          . ". NOT set or value type is INVALID");
       }
     }
   }

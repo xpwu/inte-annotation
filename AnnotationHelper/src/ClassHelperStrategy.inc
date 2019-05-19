@@ -84,19 +84,25 @@ class ClassHelperStrategy implements HelperStrategy {
     if (count($matches) === 3 && $matches[2] !== null
       && trim($matches[2]) !== "") {
 
-      $args = explode(',', $matches[2]);
+      $subject = trim($matches[2]);
+
+      $argPatten =
+        '/(\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*=)?'
+        . '\s*?((\'[^\']*\')|("[^"]*")|(\[[^\]]*\])|([^\'"\[,=\s]+))\s*?,?/';
+      $matched = preg_match_all($argPatten, $subject, $args, PREG_SET_ORDER);
+      if ($matched === false || $matched === 0) {
+        $this->logger_->throwError($this->log($methodOrProperty)
+          . ". \nArg is error, which must be '$argPatten', \nbut actual is '$subject'");
+      }
+
       foreach ($args as $arg) {
+        list($_0, $_1, $key, $value) = $arg;
         // 对于不写key的参数值，赋值给value变量
-        $arr = explode('=', $arg);
-        $arr[] = null; // 防止$arr的长度为1 引起list crash
-        list($key, $value) = $arr;
-        if ($value === null) {
-          $value = $key;
+        if ($key === "") {
           $key = "value";
         }
-        $value = trim($value);
-        $key = trim($key);
-        $annotation->{$key} = $this->unSerialize($value);
+
+        $annotation->{$key} = $this->unSerialize($value, $methodOrProperty);
       }
     }
 
@@ -106,7 +112,7 @@ class ClassHelperStrategy implements HelperStrategy {
     return $annotation;
   }
 
-  private function unSerialize(string $str) {
+  private function unSerialize(string $str, $methodOrProperty) {
     if ($str === 'false' || $str === 'FALSE') return false;
     if ($str === 'true' || $str === 'TRUE') return true;
     if ($str === "") return null;
@@ -123,18 +129,43 @@ class ClassHelperStrategy implements HelperStrategy {
 
     if (strlen($str) >= 2 && $str[0] === '[' && $str[-1] === ']') {
       $ret = [];
-      $arr = explode(';', substr($str, 1, -1));
-      foreach ($arr as $item) {
-        $r = $this->unSerialize(trim($item));
-        if ($r === null) {
-          return null;
-        }
-        $ret[] = $r;
+      $subject = substr($str, 1, -1);
+      if ($subject === "") {
+        return $ret;
       }
+
+      $arrPattern = '/\s*?((\'[^\']*\')|("[^"]*")|(\[[^\]]*\])'
+        .'|([^\'"\[,;=\s]+))\s*?(,|;)?/';
+      $matched = preg_match_all($arrPattern, $subject
+        , $args, PREG_SET_ORDER);
+      if ($matched === false || $matched === 0) {
+        $this->logger_->throwError($this->log($methodOrProperty)
+          . ". \nArray arg is error, which must be '$arrPattern', "
+          . "\nbut actual is '$subject'");
+      }
+
+      foreach ($args as $arg) {
+        list($_0, $value) = $arg;
+        $ret[] = $this->unSerialize($value, $methodOrProperty);
+      }
+
       return $ret;
     }
 
     return $str;
+  }
+
+  /**
+   *
+   * @param \ReflectionProperty|\ReflectionMethod $annotatedItem
+   */
+  private function log($annotatedItem):string {
+    return "annotation(@".$this->annotation_->getName()."), at "
+    . $annotatedItem->getDeclaringClass()->getName()
+    . "::" . $annotatedItem->getName()
+    . "(file: ...". substr(
+      $annotatedItem->getDeclaringClass()->getFileName(), -25)
+    .")";
   }
 
   /**
@@ -152,23 +183,13 @@ class ClassHelperStrategy implements HelperStrategy {
 
     foreach ($annotation as $key=>$value) {
       if (!array_key_exists($key, $proNames)) {
-        $this->logger_->throwError(
-          "annotation(@".$this->annotation_->getName()."), at "
-          . $annotatedItem->getDeclaringClass()->getName()
-          . "::" . $annotatedItem->getName()
-          . "(file: ...". substr(
-            $annotatedItem->getDeclaringClass()->getFileName(), -25)
-          ."), NOT exist public property '$key'");
+        $this->logger_->throwError($this->log($annotatedItem)
+          . ". NOT exist args(public property of annotation) '$key'");
       }
 
       if ($value === null) {
-        $this->logger_->throwError(
-          "annotation(@".$this->annotation_->getName()."), at "
-          . $annotatedItem->getDeclaringClass()->getName()
-          . "::" . $annotatedItem->getName()
-          . "(file: ...". substr(
-            $annotatedItem->getDeclaringClass()->getFileName(), -25)
-          ."), property('$key') NOT set or value type is INVALID");
+        $this->logger_->throwError($this->log($annotatedItem)
+          . ". NOT set or value type is INVALID");
       }
     }
   }
