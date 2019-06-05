@@ -34,6 +34,7 @@ class Check extends AbstractAnnotationServer {
 
     $this->logger_ = $logger;
     $this->config_ = $config;
+    $this->isBuild_ = $isBuild;
   }
 
   /**
