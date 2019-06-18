@@ -213,7 +213,7 @@ class Tokenizer {
   /**
    * @return [as=>fullName] array
    */
-  private function getAllUseMap():array {
+  public function getAllUseMap():array {
     $process = -1;
     $name = ["", ""]; // use=>as
     $ret = [];
