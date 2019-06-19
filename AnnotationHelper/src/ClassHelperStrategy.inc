@@ -13,6 +13,9 @@ class ClassHelperStrategy implements HelperStrategy {
   function __construct(\ReflectionClass $annotation, Logger $logger) {
     $this->logger_ = $logger;
     $this->annotation_ = $annotation;
+    $tokenizer = new Tokenizer($this->annotation_);
+    $this->inherited_ = $tokenizer->directlyImplementInterface(
+      new \ReflectionClass(Inherited::class));
   }
 
   public function isAnnotatingClass(\ReflectionClass $class):bool {
@@ -20,7 +23,7 @@ class ClassHelperStrategy implements HelperStrategy {
       return false;
     }
 
-    if ($this->annotation_->implementsInterface(Inherited::class)) {
+    if ($this->inherited_) {
       return true;
     }
 
@@ -240,4 +243,6 @@ class ClassHelperStrategy implements HelperStrategy {
    * @var Logger
    */
   private $logger_;
+
+  private $inherited_ = false;
 }

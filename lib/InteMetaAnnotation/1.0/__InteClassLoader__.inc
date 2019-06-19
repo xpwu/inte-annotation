@@ -9,7 +9,7 @@ namespace InteMetaAnnotation;
 class ClassLoader {
   public const AllClasses = [
     
-		"Inte\MetaAnnotation\Annotation" => "src/Annotation.inc",
-		"Inte\MetaAnnotation\Inherited" => "src/Inherited.inc",
+		'Inte\MetaAnnotation\Annotation' => 'src/Annotation.inc',
+		'Inte\MetaAnnotation\Inherited' => 'src/Inherited.inc',
   ];
 }
