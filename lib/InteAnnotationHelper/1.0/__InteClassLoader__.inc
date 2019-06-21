@@ -9,6 +9,7 @@ namespace InteAnnotationHelper;
 class ClassLoader {
   public const AllClasses = [
     
+		'Inte\Annotation\Helper\Comment' => 'src/Comment.inc',
 		'Inte\Annotation\Helper' => 'src/Helper.inc',
 		'Inte\Annotation\Helper\HelperStrategy' => 'src/HelperStrategy.inc',
 		'Inte\Annotation\Helper\InterfaceHelperStrategy' => 'src/InterfaceHelperStrategy.inc',

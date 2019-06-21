@@ -5,18 +5,24 @@ namespace Inte\Annotation\Helper;
 
 
 use ReflectionClass;
-use ReflectionProperty;
 
 class Tokenizer {
-  function __construct(ReflectionClass $class) {
+  public function __construct(ReflectionClass $class) {
     $this->class_ = $class;
     $this->tokens_ = token_get_all(
       file_get_contents($this->class_->getFileName()));
   }
 
+  static public function createTokenizer(ReflectionClass $class):self {
+    if ($class->isInterface()) {
+      return new InterfaceTokenizer($class);
+    }
+    return new self($class);
+  }
+
   public function directlyImplementInterface(ReflectionClass $interface):bool {
     $alias = $this->getAliasNames($interface);
-    $implements = $this->getAllImplements();
+    $implements = $this->getAllImplementAlias();
 
     return count(array_intersect($alias, $implements));
   }
@@ -30,13 +36,14 @@ class Tokenizer {
 
       $pos = strpos($interfaceOrClass->getName()
         , $this->class_->getNamespaceName());
-      if ($pos !== false) {
+      if ($pos === 0) {
         $alias[] = substr($interfaceOrClass->getName()
-          , strlen($this->class_->getNamespaceName()) + $pos+1/* 去掉\ */);
+          , strlen($this->class_->getNamespaceName()) + 1/* 去掉\ */);
       }
     }
 
-    // 2 使用 use ... [as] ...  引入的
+    // 2 使用 use ... [as] ...  引入的, 包括只是引入了子空间
+    // eg: use A\C as CC;  xxxx CC\D  => A\C\D
 
     $process = -1;
     $name = ["", $interfaceOrClass->getShortName()]; // use=>as
@@ -52,8 +59,11 @@ class Tokenizer {
       }
 
       if ($token === ";" && $process != -1) {
-        if ($name[0] === $interfaceOrClass->getName()) {
-          $alias[] = $name[1];
+        $pos = strpos($interfaceOrClass->getName(), $name[0]);
+        if ($pos === 0) {
+          $pos = strlen($name[0]);
+          $left = substr($interfaceOrClass->getName(), $pos);
+          $alias[] = $name[1] . $left;
         }
 
         $process = -1;
@@ -85,7 +95,39 @@ class Tokenizer {
     return T_CLASS;
   }
 
-  private function getAllImplements():array {
+  public function getAllImplements():array {
+    $ret = [];
+    $implAlias = $this->getAllImplementAlias();
+    $uses = $this->getAllUseMap();
+    foreach ($implAlias as $impl) {
+      // 全限定名
+      if ($impl[0] === '\\') {
+        $ret[] = substr($impl, 1);
+        continue;
+      }
+
+      $found = false;
+      foreach ($uses as $as=>$use) {
+        // use A\C as CC ,  CC\D => A\C\D
+        // use A\C, C\D => A\C\D
+        // use A\C\D, D => A\C\D
+        $pos = strpos($impl, $as);
+        if ($pos === 0) {
+          $ret[] = $use . substr($impl, strlen($as));
+          $found = true;
+        }
+      }
+      if ($found) {
+        continue;
+      }
+
+      $ret[] = $this->class_->getNamespaceName() . "\\" . $impl;
+    }
+
+    return $ret;
+  }
+
+  private function getAllImplementAlias():array {
     $implements = [];
 
     $thisClass = 0;
