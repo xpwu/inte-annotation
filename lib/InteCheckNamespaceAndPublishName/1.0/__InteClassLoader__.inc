@@ -9,6 +9,6 @@ namespace InteCheckNamespaceAndPublishName;
 class ClassLoader {
   public const AllClasses = [
     
-		"Inte\CheckNamespaceAndPublishName\Check" => "src/Check.inc",
+		'Inte\CheckNamespaceAndPublishName\Check' => 'src/Check.inc',
   ];
 }

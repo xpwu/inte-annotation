@@ -22,7 +22,8 @@ class Check extends AbstractAnnotationServer {
     foreach ($classes as $class) {
       $classN = str_replace('\\', '', $class);
       $pos = strpos($classN, $publishName);
-      if ($pos === false || $pos !== 0) {
+      // 修改为不要求必须是发布名开头，可能部分库的类名有固定前缀
+      if ($pos === false) {
         $this->logger_->throwError(
           "$class name is Not matched with publish name($publishName)");
       }
