@@ -60,6 +60,12 @@ class Comment {
     return $ret;
   }
 
+  /**
+   * @param string $tag
+   * @return string
+   *
+   * @deprecated
+   */
   public function getValue(string $tag):string {
     $lines = explode("\n", $this->str_);
     foreach ($lines as $line) {
@@ -77,6 +83,34 @@ class Comment {
     }
 
     return trim($matches[1]);
+  }
+
+  /**
+   * @param string $tag
+   * @return string[]
+   */
+  public function getTagValues(string $tag):array {
+    $ret = [];
+
+    $lines = explode("\n", $this->str_);
+
+    foreach ($lines as $line) {
+      // * tag
+      $matched = preg_match(
+        '/^\s*\*\s*'.$tag.'(.*)$/mU', $line, $matches);
+
+      if ($matched === 0) {
+        continue;
+      }
+
+      if (count($matches) < 2 || $matches[1] == null) {
+        $ret[] = "";
+      }
+
+      $ret[] = trim($matches[1]);
+    }
+
+    return $ret;
   }
 
 }

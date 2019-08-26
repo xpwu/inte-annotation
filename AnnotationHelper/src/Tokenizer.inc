@@ -353,11 +353,14 @@ class Tokenizer {
     $ret = [];
     foreach ($refMethod->getParameters() as $parameter) {
       $thisT = [];
-      if ($parameter->allowsNull()) {
-        $thisT[] = 'null';
-      }
 
       if ($parameter->hasType()) {
+        // 允许null 目前的规则还不是很确定，本意是类型前面是否有?
+        // 暂时放在明确有类型的情况下 才判断null
+        if ($parameter->allowsNull()) {
+          $thisT[] = 'null';
+        }
+
         $thisT = array_merge($thisT
           , $this->getTypeStrs($parameter->getType()->getName()));
         $ret[] = $thisT;

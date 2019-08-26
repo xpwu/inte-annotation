@@ -203,6 +203,68 @@ class Tokenizer {
       return $ret;
     }
 
+    return $this->getTypeStrs($matches[1]);
+
+//    $primitive = [
+//      'string'=>'string',
+//      'bool'=>'bool',
+//      'int'=>'int',
+//      'float'=>'float',
+//      'array'=>'array',
+//      'object'=>'object',
+//      'null'=>'null',
+//      'callback'=>'callback',
+//      'mixed'=>'mixed',
+//      'resource'=>'resource',
+//      'integer'=>'int',
+//      'boolean'=>'bool',
+//      'double'=>'float',
+//      'void'=>'void'
+//      ];
+//
+//    $types = explode('|', $matches[1]);
+//
+//    foreach ($types as $type) {
+//      $suffix = "";
+//      if (strlen($type) > 2 && $type[-2]=='['&&$type[-1]==']') {
+//        $suffix = '[]';
+//        $type = substr($type, 0, -2);
+//      }
+//
+//      if (@$primitive[$type] !== null) {
+//        $ret[] = $primitive[$type] . $suffix;
+//        continue;
+//      }
+//
+//      if (strpos($type, '\\') === 0) {
+//        $ret[] = substr($type, 1) . $suffix;
+//        continue;
+//      }
+//
+//      $uses = $this->getAllUseMap();
+//      $fullNm = @$uses[$type];
+//      if ($fullNm !== null) {
+//        $ret[] = $fullNm . $suffix;
+//        continue;
+//      }
+//
+//      $ret[] = $this->class_->getNamespaceName() . '\\' . $type . $suffix;
+//    }
+//
+//    return $ret;
+  }
+
+  /**
+   * @param string $rawTypeStr
+   * @return string[]
+   *
+   * 类型 string|bool|int|float|array|object|null|callback|mixed|resource|void
+   *  |<类>|[]标示的数组
+   *
+   */
+  public function getTypeStrs(string $rawTypeStr):array {
+    $ret = [];
+
     $primitive = [
       'string'=>'string',
       'bool'=>'bool',
@@ -218,9 +280,9 @@ class Tokenizer {
       'boolean'=>'bool',
       'double'=>'float',
       'void'=>'void'
-      ];
+    ];
 
-    $types = explode('|', $matches[1]);
+    $types = explode('|', $rawTypeStr);
 
     foreach ($types as $type) {
       $suffix = "";
@@ -251,6 +313,85 @@ class Tokenizer {
 
     return $ret;
   }
+
+
+  /**
+   * @param string $methodName
+   * @return array
+   * @throws \ReflectionException
+   *
+   * 按照参数顺序的 类型 最后一个是returnType
+   * 每一个都是存储的数组，因为可能是 | 分割的多个类型
+   *
+   */
+  public function getMethodParamAndReturnTypes(string $methodName):array {
+    $refMethod = $this->class_->getMethod($methodName);
+    $doc = $refMethod->getDocComment();
+    $commnet = new Comment($doc);
+    $docValues = $commnet->getTagValues("@param");
+    $docTypes = [];
+
+    foreach ($docValues as $line) {
+      $item = explode(" ", $line);
+      if (count($item) < 2) {
+        continue;
+      }
+
+      $item0 = trim($item[0]);
+      $item1 = trim($item[1]);
+      if (substr($item0, 0, 1) === "$") {
+        $docTypes[$item0] = $this->getTypeStrs($item1);
+        continue;
+      }
+
+      if (substr($item1, 0, 1) === "$") {
+        $docTypes[$item1] = $this->getTypeStrs($item0);
+        continue;
+      }
+    }
+
+    $ret = [];
+    foreach ($refMethod->getParameters() as $parameter) {
+      $thisT = [];
+
+      if ($parameter->hasType()) {
+        // 允许null 目前的规则还不是很确定，本意是类型前面是否有?
+        // 暂时放在明确有类型的情况下 才判断null
+        if ($parameter->allowsNull()) {
+          $thisT[] = 'null';
+        }
+
+        $thisT = array_merge($thisT
+          , $this->getTypeStrs($parameter->getType()->getName()));
+        $ret[] = $thisT;
+        continue;
+      }
+
+      if (@$docTypes['$'.$parameter->getName()] !== null) {
+        $thisT = array_merge($thisT, @$docTypes['$'.$parameter->getName()]);
+        $ret[] = $thisT;
+        continue;
+      }
+
+      $thisT[] = 'mixed';
+
+      $ret[] = $thisT;
+    }
+
+    $retT = $refMethod->getReturnType();
+    if ($retT !== null) {
+      $ret[] = [$retT->getName()];
+      return $ret;
+    }
+
+    $docValues = $commnet->getTagValues("@return");
+    if (count($docValues) >= 1) {
+      $ret[] = $this->getTypeStrs($docValues[0]);
+    }
+
+    return $ret;
+  }
+
 
   /**
    * @return [as=>fullName] array
